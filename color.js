@@ -17,6 +17,11 @@ var highLimit = 20000;
 var sampleRate = 44100;
 var maxDiff = 5;
 var minDiff = 0;
+var maximum = {
+    low: 0,
+    mid: 0,
+    high: 0
+}
 
 function normalize255(val) {
     return (Math.exp(val) - Math.exp(minDiff)) * 255 / (Math.exp(maxDiff) - Math.exp(minDiff));
@@ -47,10 +52,17 @@ function freqDataToBoxFreqs (frequencyLevel) {
     }
 }
 
-function random_bg_color(frequencyLevel) {
-    console.log(frequencyLevel);
+function random_bg_color(frequencyLevel, box) {
+    maximum[box] = maximum[box] - 1;
+
+    console.log(maximum[box]);
+    
+    frequencyLevel > maximum[box] ? console.log('newmaximum ' + frequencyLevel) :null;
+    frequencyLevel > maximum[box] ? maximum[box] = frequencyLevel : null;
+    
+    
     var r = Math.floor(Math.random() * 256);
-    return "rgb(" + frequencyLevel + "," + frequencyLevel + "," + frequencyLevel + ")";  
+    return "rgb(" + maximum[box] + "," + maximum[box] + "," + maximum[box] + ")";  
 }
     
 navigator.getUserMedia(
@@ -83,7 +95,7 @@ function renderFrame() {
 
     frequencies = freqDataToBoxFreqs(frequencyData);
 
-    trigger(frequencies.low, lastFrequencies.low) ? colorBox_low.style.backgroundColor = random_bg_color(normalize255(Math.abs(frequencies.low - lastFrequencies.low))) : null;
-    //trigger(frequencies.mid, lastFrequencies.mid) ? colorBox_mid.style.backgroundColor = random_bg_color(Math.abs(frequencies.mid - lastFrequencies.mid) * 255 / maxDiff) : null;
-    //trigger(frequencies.high, lastFrequencies.high) ? colorBox_high.style.backgroundColor = random_bg_color(Math.abs(frequencies.high - lastFrequencies.high) * 255 / maxDiff) : null;    
+    trigger(frequencies.low, lastFrequencies.low) ? colorBox_low.style.backgroundColor = random_bg_color(frequencies.low, 'low') : null;
+    trigger(frequencies.mid, lastFrequencies.mid) ? colorBox_mid.style.backgroundColor = random_bg_color(frequencies.mid, 'mid') : null;
+    trigger(frequencies.high, lastFrequencies.high) ? colorBox_high.style.backgroundColor = random_bg_color(frequencies.high, 'high') : null; 
 }
