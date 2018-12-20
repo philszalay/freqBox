@@ -2,11 +2,12 @@ var colorBoxContainer = document.getElementById('colorBoxContainer');
 var colorBox_high = document.getElementById('colorBox_high');
 var colorBox_mid = document.getElementById('colorBox_mid');
 var colorBox_low = document.getElementById('colorBox_low');
-var frequencies = {
-    low: 255,
-    mid: 255,
-    high: 255,
+var frequencyLevels, maxLevel = {
+    low: 0,
+    mid: 0,
+    high: 0,
 };
+
 var audio, volume, frequency, audioContext, analyser, 
     microphone, waveform, amplitude;
 
@@ -15,54 +16,112 @@ var bassLimit = 250;
 var midLimit = 4000;
 var highLimit = 20000;
 var sampleRate = 44100;
-var maxDiff = 5;
-var minDiff = 0;
-var maximum = {
-    low: 0,
-    mid: 0,
-    high: 0
+var triggerTreshhold = 0;
+var frequencyLevelBuffer = {
+    low: [],
+    mid: [],
+    high: []
 }
 
-function normalize255(val) {
-    return (Math.exp(val) - Math.exp(minDiff)) * 255 / (Math.exp(maxDiff) - Math.exp(minDiff));
-}
+//************************************//
+// - Brightness is defined by volume  //
+// - Color is defined by frequency    //
+//                                    //
+//                                    //
+//************************************//
 
 // function to determine if box color is updated.
 function trigger(frequencyLevel, lastFrequencyLevel) {
-    return Math.abs(lastFrequencyLevel - frequencyLevel) > minDiff;
+    return Math.abs(lastFrequencyLevel - frequencyLevel) > triggerTreshhold;
+}
+
+function normalizeValue(value, from, to) {
+    return value / ((analyser.fftSize / 8) / 360);
+}
+
+function normalizeLevel(value, from, to) {
+    return value / (128 / 100);
+}
+
+function calcAverageFrequencyLevel(frequencyLevel, box) {
+    if (box !== 'low') {
+        frequencyLevelBuffer[box].push(frequencyLevel);
+        if (frequencyLevelBuffer[box].length >= 28) {
+            console.log('52');
+            frequencyLevelBuffer[box].shift();
+
+        }
+        var sum = 0;
+        for( var i = 0; i < frequencyLevelBuffer[box].length; i++){
+            sum += parseInt( frequencyLevelBuffer[box][i], 10); //don't forget to add the base
+        }
+
+        var avg = sum/frequencyLevelBuffer[box].length;
+        console.log(avg);
+        return avg;
+    }
+    return frequencyLevel;
 }
 
 function calcAverage(frequencyData, from, to) {
     var sum = 0;
+        var zeros = 0;
     for(var i = from; i < to; i++) {
+        if (frequencyData[i] === 0) {
+            zeros = zeros + 1;
+        }
         sum = sum + frequencyData[i];
     }
-    return sum / (to - from);
+    return normalizeLevel(sum / (to - from - zeros));
 }
 
-function calcMax(frequencyData, from, to) {
-    return Math.max(frequencyData.slice(from, to));
+function calcMax(frequencyArray, from, to) {
+    return Math.max.apply(null, frequencyArray.slice(from, to));
 }
 
-function freqDataToBoxFreqs (frequencyLevel) {
-    return {
-        low: calcAverage(frequencyLevel, 0, 11),
-        mid: calcAverage(frequencyLevel, 12, 185),
-        high: calcAverage(frequencyLevel, 186, 1023)
+
+function calcMedian(frequencyData, from, to) {
+    frequencyData.slice(from, to).sort(function(a,b) {
+        return a - b;
+    });
+
+    var half = Math.floor(frequencyData.length/2);
+
+    if(frequencyData.length % 2) {
+        return frequencyData[half];
+    } else {
+        return (frequencyData[half - 1] + frequencyData[half]) / 2.0;
     }
 }
 
-function random_bg_color(frequencyLevel, box) {
-    maximum[box] = maximum[box] - 1;
+function calcFrequencyValue(frequencyData, from, to) {
+    return normalizeValue(frequencyData.indexOf(Math.max.apply(null, frequencyData.slice(from, to))), from, to);
+}
 
-    console.log(maximum[box]);
+function getFrequencyLevels(frequencyData) {
+    return {
+        low: calcAverage(frequencyData, 0, 11) - 150,
+        mid: calcAverage(frequencyData, 12, 185),
+        high: calcAverage(frequencyData, 186, 1023)
+    }
+}
+
+function getFrequencyValues(frequencyData) {
+    return {
+        low: calcFrequencyValue(frequencyData, 0, 11),
+        mid: calcFrequencyValue(frequencyData, 12, 185),
+        high: calcFrequencyValue(frequencyData, 186, 1023)
+    }
+}
+
+function colorBoxes(frequencyLevel, frequencyValue, box) {
+    maxLevel[box] = maxLevel[box] - 1;
+    frequencyLevel > maxLevel[box] - 50 ? maxLevel[box] = frequencyLevel : null;
     
-    frequencyLevel > maximum[box] ? console.log('newmaximum ' + frequencyLevel) :null;
-    frequencyLevel > maximum[box] ? maximum[box] = frequencyLevel : null;
-    
-    
-    var r = Math.floor(Math.random() * 256);
-    return "rgb(" + maximum[box] + "," + maximum[box] + "," + maximum[box] + ")";  
+    //console.log(frequencyValue);
+    //console.log(box + ' ' + maxLevel[box]);
+
+    return "hsl(" + calcAverageFrequencyLevel(frequencyValue, box) + "," + 100 + "%," + frequencyLevel + "%)";  
 }
     
 navigator.getUserMedia(
@@ -78,24 +137,22 @@ navigator.getUserMedia(
         analyser.fftSize = 2048;
         frequencyData = new Uint8Array(analyser.frequencyBinCount);
 
-        // for(var i = 0; i < 1024; i++) {
-        //     console.log(i*sampleRate/analyser.fftSize);
-        // }
-
         renderFrame();
     }, function (error) { console.log(error) });
 
 function renderFrame() {    
     requestAnimationFrame(renderFrame);
 
-    lastFrequencies = frequencies;
+    // save frequencyLevels from last frame
+    lastfrequencyLevels = frequencyLevels;
 
     // copies current data streaming trough the analyser to frequencyData Uint8Array
     analyser.getByteFrequencyData(frequencyData);
 
-    frequencies = freqDataToBoxFreqs(frequencyData);
+    frequencyLevels = getFrequencyLevels(frequencyData);
+    frequencyValues = getFrequencyValues(frequencyData);
 
-    trigger(frequencies.low, lastFrequencies.low) ? colorBox_low.style.backgroundColor = random_bg_color(frequencies.low, 'low') : null;
-    trigger(frequencies.mid, lastFrequencies.mid) ? colorBox_mid.style.backgroundColor = random_bg_color(frequencies.mid, 'mid') : null;
-    trigger(frequencies.high, lastFrequencies.high) ? colorBox_high.style.backgroundColor = random_bg_color(frequencies.high, 'high') : null; 
+    trigger(frequencyLevels.low, lastfrequencyLevels.low) ? colorBox_low.style.backgroundColor = colorBoxes(frequencyLevels.low/2, frequencyValues.low, 'low') : null;
+    trigger(frequencyLevels.mid, lastfrequencyLevels.mid) ? colorBox_mid.style.backgroundColor = colorBoxes(frequencyLevels.mid/2, frequencyValues.mid, 'mid') : null;
+    trigger(frequencyLevels.high, lastfrequencyLevels.high) ? colorBox_high.style.backgroundColor = colorBoxes(frequencyLevels.high/2, frequencyValues.high, 'high') : null; 
 }
