@@ -1,8 +1,8 @@
-<div id="colorBoxContainer">
-    <box [ngStyle]="{backgroundColor = colorBoxHigh}" class="colorBox">
-    </box>
-    <box [ngStyle]="{backgroundColor = colorBoxMid}" class="colorBox">
-    </box>
-    <box [ngStyle]="{backgroundColor = colorBoxLow}" class="colorBox">
-    </box>
+<div>
 </div>
+<box [boxContext]="boxContextHigh" [boxContextVolume]="boxContextHigh?.volume" [boxContextFrequency]="boxContextHigh?.frequency">
+</box>
+<box [boxContext]="boxContextMid" [boxContextVolume]="boxContextMid?.volume" [boxContextFrequency]="boxContextMid?.frequency">
+</box>
+<box [boxContext]="boxContextLow" [boxContextVolume]="boxContextLow?.volume" [boxContextFrequency]="boxContextLow?.frequency">
+</box>

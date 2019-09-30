@@ -1,5 +1,5 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { Box } from '../models';
+import { BoxContext } from '../models';
 
 @Component({
   selector: 'box',
@@ -7,14 +7,39 @@ import { Box } from '../models';
   styleUrls: ['./box.component.css']
 })
 export class BoxComponent implements OnInit {
-  @Input()
-  color: string;
+  private _boxContext: BoxContext;
+  public color: string;
 
-  constructor() {
-    
+  @Input()
+  set boxContextVolume(volume: number) {
+    if (this._boxContext) {
+      this._boxContext.volume = volume;
+      this.color = "hsl(" + this._boxContext + "," + 100 + "%," + this._boxContext.volume + "%)";
+    }
   }
 
-  ngOnInit() {
+  @Input()
+  set boxContextFrequency(frequency: number) {
+    if (this._boxContext) {
+      this._boxContext.frequency = frequency;
+      this.color = "hsl(" + this._boxContext.frequency + "," + 100 + "%," + this._boxContext.volume + "%)";
+    }
+  }
 
+  @Input()
+  set boxContext(boxContext: BoxContext) {
+    if (boxContext) {
+      this.color = "hsl(" + boxContext.frequency + "," + 100 + "%," + boxContext.volume + "%)";
+      this._boxContext = boxContext;
+    }
+  }
+
+  get boxContext(): BoxContext {
+    return this._boxContext;
+  }
+
+  constructor() { }
+
+  ngOnInit() {
   }
 }
