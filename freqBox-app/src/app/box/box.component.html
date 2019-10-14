@@ -1,1 +1,9 @@
-<div [style.backgroundColor]="color" class="colorBox"></div>
+<div class="colorBoxWrapper">
+    <div [style.backgroundColor]="color" class="colorBox"></div>
+    <div class="statBox">
+        Frequency: {{ boxContext.frequency }}
+        <br> Volume: {{ boxContext.volume }}
+        <br> Max Frequency: {{ boxContext.maxFrequency }}
+        <br> Min Frequency: {{ boxContext.minFrequency }}
+    </div>
+</div>

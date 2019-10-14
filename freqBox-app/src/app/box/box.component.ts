@@ -14,7 +14,7 @@ export class BoxComponent implements OnInit {
   set boxContextVolume(volume: number) {
     if (this._boxContext) {
       this._boxContext.volume = volume;
-      this.color = "hsl(" + this._boxContext + "," + 100 + "%," + this._boxContext.volume + "%)";
+      this.color = "hsl(" + this._boxContext.frequency + "," + 100 + "%," + this._boxContext.volume + "%)";
     }
   }
 

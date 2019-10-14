@@ -1,4 +1,15 @@
 .colorBox {
-    width: 640px;
-    height: 160px;
+    height: 200px;
+    width: 80%;
+}
+
+.statBox {
+    width: 20%;
+    height: 200px;
+    background-color: grey;
+}
+
+.colorBoxWrapper {
+    display: flex;
+    flex-direction: row;
 }

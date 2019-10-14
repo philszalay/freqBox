@@ -4,5 +4,6 @@ export const environment = {
   bassUpperBound: 250,
   midUpperBound: 4000,
   highUpperBound: 20000,
-  sampleRate: 44100
+  sampleRate: 44100,
+  volumeThreshold: -20
 }

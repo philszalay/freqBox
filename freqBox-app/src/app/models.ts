@@ -10,4 +10,6 @@ export class BoxContext {
     public lowerBoundIndex: number;
     public volume: number;
     public frequency: number;
+    public maxFrequency: number = 0;
+    public minFrequency: number = 20000;
 }

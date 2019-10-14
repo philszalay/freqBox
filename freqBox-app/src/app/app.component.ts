@@ -52,30 +52,38 @@ export class AppComponent implements OnInit {
   }
 
   getUpperBoundIndex(upperBound: number) {
-    return upperBound / 20000 * this.frequencyData.length;
+    return (upperBound / environment.highUpperBound) * this.frequencyData.length;
   }
 
   getLowerBoundIndex(lowerBound: number) {
-    return lowerBound / 20000 * this.frequencyData.length;
+    return (lowerBound / environment.highUpperBound) * this.frequencyData.length;
   }
 
   getVolume(boxContext: BoxContext): number {
-    let count = this.frequencyData.length;
-    let values = this.frequencyData.reduce((previous, current) => current += previous);
-    return (values /= count) - 50;
+    let count = Array.from(this.frequencyData).slice(boxContext.lowerBoundIndex, boxContext.upperBoundIndex).length;
+    let values = Array.from(this.frequencyData).slice(boxContext.lowerBoundIndex, boxContext.upperBoundIndex).reduce((previous, current) => current += previous);
+    return 100 * (values /= count) / 255 - environment.volumeThreshold;
   }
 
   getFrequency(boxContext: BoxContext): number {
-    return Math.max(...Array.from(this.frequencyData).slice(boxContext.lowerBoundIndex, boxContext.upperBoundIndex));
+    let max = Math.max(...Array.from(this.frequencyData).slice(boxContext.lowerBoundIndex, boxContext.upperBoundIndex));
+
+    function isLargeNumber(element) {
+      return element === max;
+    }
+
+    let index = 360 * (Array.from(this.frequencyData).slice(boxContext.lowerBoundIndex, boxContext.upperBoundIndex).findIndex(isLargeNumber) + boxContext.lowerBoundIndex) / this.frequencyData.length;
+
+    if (index > boxContext.maxFrequency) {
+      boxContext.maxFrequency = index;
+    } else if(index < boxContext.minFrequency && index > 0) {
+      boxContext.minFrequency = index;
+    }
+
+    return index;
   }
 
   colorBoxes() {
-    let min = 255;
-    let max = 0;
-
-    max = Math.max(...Array.from(this.frequencyData)) > max ? Math.max(...Array.from(this.frequencyData)) : max;
-    min = Math.min(...Array.from(this.frequencyData)) < min ? Math.min(...Array.from(this.frequencyData)) : min;
-
     this.boxContextHigh.volume = this.getVolume(this.boxContextHigh);
     this.boxContextMid.volume = this.getVolume(this.boxContextMid);
     this.boxContextLow.volume = this.getVolume(this.boxContextLow);
@@ -83,10 +91,6 @@ export class AppComponent implements OnInit {
     this.boxContextHigh.frequency = this.getFrequency(this.boxContextHigh);
     this.boxContextMid.frequency = this.getFrequency(this.boxContextMid);
     this.boxContextLow.frequency = this.getFrequency(this.boxContextLow);
-
-    // colorBoxHigh.frequency = Math.max(...Array.from(frequencyData));
-    // colorBoxMid.frequency = Math.max(...Array.from(frequencyData));
-    // colorBoxLow.frequency = Math.max(...Array.from(frequencyData));
 
     this.ref.detectChanges();
   }
